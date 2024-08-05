@@ -31,45 +31,43 @@ func (p *EpcPayment) SetPurpose(value string) {
 }
 
 func (p *EpcPayment) GenerateString() (string, error) {
-	res := strings.Builder{}
-	res.WriteString(EpcHeader)
+	var sb strings.Builder
+	sb.WriteString(EpcHeader)
+
+	writeIfNotEmpty := func(value string, maxLength int) {
+		if value != "" {
+			sb.WriteString(base.TrimToLength(value, maxLength) + "\n")
+		} else {
+			sb.WriteString("\n")
+		}
+	}
 
 	if p.BIC != "" {
-		res.WriteString(base.TrimToLength(p.BIC, 11))
+		sb.WriteString(base.TrimToLength(p.BIC, 11) + "\n")
+	} else {
+		sb.WriteString("\n")
 	}
-	res.WriteString("\n")
 
 	if p.Recipient == "" {
 		return "", errors.New("name of the beneficiary is mandatory")
 	}
-	res.WriteString(base.TrimToLength(p.Recipient, 70) + "\n")
+	sb.WriteString(base.TrimToLength(p.Recipient, 70) + "\n")
 
 	if p.IBAN == "" {
 		return "", errors.New("IBAN is mandatory")
 	}
-	res.WriteString(base.TrimToLength(p.IBAN, 34) + "\n")
+	sb.WriteString(base.TrimToLength(p.IBAN, 34) + "\n")
 
 	if p.Amount != "" {
-		if p.Currency != "" {
-			res.WriteString(base.TrimToLength(p.Currency, 3))
-		}
-		res.WriteString(base.TrimToLength(p.Amount, 12))
-	}
-	res.WriteString("\n")
-
-	if p.Purpose != "" {
-		res.WriteString(base.TrimToLength(p.Purpose, 4))
-	}
-	res.WriteString("\n")
-
-	if p.Reference != "" {
-		res.WriteString(base.TrimToLength(p.Reference, 140))
-	}
-	res.WriteString("\n\n")
-
-	if p.Msg != "" {
-		res.WriteString(base.TrimToLength(p.Msg, 70))
+		writeIfNotEmpty(p.Currency, 3)
+		sb.WriteString(base.TrimToLength(p.Amount, 12) + "\n")
+	} else {
+		sb.WriteString("\n")
 	}
 
-	return strings.TrimSpace(res.String()), nil
+	writeIfNotEmpty(p.Purpose, 4)
+	writeIfNotEmpty(p.Reference, 140)
+	writeIfNotEmpty(p.Msg, 70)
+
+	return strings.TrimSpace(sb.String()), nil
 }
